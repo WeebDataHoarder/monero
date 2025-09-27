@@ -2224,7 +2224,7 @@ std::string WalletImpl::signMessage(const std::string &message, const std::strin
         return "";
 
     if (address.empty()) {
-        return m_wallet->sign(message, tools::wallet2::sign_with_spend_key);
+        return m_wallet->sign(message, m_wallet->watch_only() ? tools::wallet2::sign_with_view_key : tools::wallet2::sign_with_spend_key);
     }
 
     cryptonote::address_parse_info info;
@@ -2238,7 +2238,13 @@ std::string WalletImpl::signMessage(const std::string &message, const std::strin
         return "";
     }
 
-    return m_wallet->sign(message, tools::wallet2::sign_with_spend_key, *index);
+    // wallet is view only and can only sign main address
+    if (m_wallet->watch_only() && !index->is_zero()) {
+        setStatusError(tr("Wallet is watch-only and cannot sign"));
+        return "";
+    }
+
+    return m_wallet->sign(message, m_wallet->watch_only() ? tools::wallet2::sign_with_view_key : tools::wallet2::sign_with_spend_key, *index);
 }
 
 bool WalletImpl::verifySignedMessage(const std::string &message, const std::string &address, const std::string &signature) const

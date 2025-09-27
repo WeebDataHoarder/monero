@@ -9857,11 +9857,6 @@ bool simple_wallet::sign(const std::vector<std::string> &args)
     PRINT_USAGE(USAGE_SIGN);
     return true;
   }
-  if (m_wallet->watch_only())
-  {
-    fail_msg_writer() << tr("wallet is watch-only and cannot sign");
-    return true;
-  }
   if (m_wallet->get_multisig_status().multisig_is_active)
   {
     fail_msg_writer() << tr("This wallet is multisig and cannot sign");
@@ -9891,6 +9886,12 @@ bool simple_wallet::sign(const std::vector<std::string> &args)
       fail_msg_writer() << tr("Invalid subaddress index format, and not a signature type: ") << args[idx];
       return true;
     }
+  }
+
+  if ((message_signature_type != tools::wallet2::sign_with_view_key || !index.is_zero()) && m_wallet->watch_only())
+  {
+    fail_msg_writer() << tr("wallet is watch-only and cannot sign");
+    return true;
   }
 
   const std::string &filename = args.back();
